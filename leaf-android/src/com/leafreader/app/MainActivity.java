@@ -2,12 +2,10 @@ package com.leafreader.app;
 import android.app.*;import android.os.*;import android.content.*;import android.content.res.Configuration;import android.database.Cursor;import android.graphics.*;import android.graphics.drawable.GradientDrawable;import android.net.Uri;import android.provider.OpenableColumns;import android.text.*;import android.view.*;import android.widget.*;
 import java.util.*;import java.util.concurrent.*;import java.io.*;
 public final class MainActivity extends Activity {
- Store store;SharedPreferences prefs;ApiKeyStore apiKeys;LinearLayout root,screen,readerBody;ScrollView readerScroll;LinearLayout readerTop,readerBottom;TextView status,pageLabel,autoButton,translateButton,quietProgress;FrameLayout readerFrame;Book book;List<Core.Page> pages=new ArrayList<>();Map<Integer,String> cached=new HashMap<>();String profile="",apiKey="",error="";boolean translate=false,blocked=false,networkBusy=false,foreground=false,automatic=false,modal=false;int remaining=30,tab=0,bg,text,muted,accent,surface;final ReaderGesture readerGesture=new ReaderGesture();boolean menuVisible=false,selectingText=false,layingOut=false;final ReadAhead readAhead=new ReadAhead();long readingGeneration=0,lastTick=0;
+ Store store;SharedPreferences prefs;ApiKeyStore apiKeys;LinearLayout root,screen,readerBody;ScrollView readerScroll;LinearLayout readerTop,readerBottom;TextView status,pageLabel,autoButton,translateButton,quietProgress;FrameLayout readerFrame;Book book;List<Core.Page> pages=new ArrayList<>();Map<Integer,String> cached=new HashMap<>();Map<String,String> learnedTerms=new LinkedHashMap<>();String profile="",apiKey="",error="";boolean translate=false,blocked=false,networkBusy=false,foreground=false,automatic=false,modal=false;int remaining=30,tab=0,bg,text,muted,accent,surface;final ReaderGesture readerGesture=new ReaderGesture();boolean menuVisible=false,selectingText=false,layingOut=false;long readingGeneration=0;
  final Handler ui=new Handler(Looper.getMainLooper());final ExecutorService io=Executors.newSingleThreadExecutor(),network=Executors.newSingleThreadExecutor();
  final Runnable timer=new Runnable(){public void run(){
-  long now=SystemClock.elapsedRealtime(),delta=lastTick==0?0:now-lastTick;lastTick=now;
   boolean active=activelyReading();
-  if(book!=null&&translate){readAhead.record(delta,active,currentComplete());considerReadAhead();}
   if(active&&automatic){
    if(!translate||currentComplete()){
     View child=readerScroll.getChildAt(0);
@@ -20,27 +18,11 @@ public final class MainActivity extends Activity {
   ui.postDelayed(this,1000);
  }};
  boolean activelyReading(){return foreground&&book!=null&&readerScroll!=null&&!modal&&!menuVisible&&!selectingText&&!layingOut;}
- void resetReadProgress(){readAhead.reset();readingGeneration++;lastTick=SystemClock.elapsedRealtime();}
- int displayedCharacters(){
-  if(book==null||pages.isEmpty())return 0;
-  Core.Page p=pages.get(page());int total=0;String mode=ReaderDisplay.mode(translate,prefs.getString("view","translation"));
-  for(int i=p.start;i<p.end;i++){
-   String original=book.units.get(i).text,value=cached.get(i);
-   total+=(value==null||mode.equals("original")?original:value).length();
-   if(mode.equals("bilingual")&&value!=null)total+=original.length();
-  }
-  return total;
- }
- void considerReadAhead(){
-  if(!translate||blocked||!activelyReading()||!currentComplete())return;
-  int maxScroll=Math.max(0,readerBody.getHeight()-readerScroll.getHeight());
-  float progress=maxScroll>dp(48)?Math.min(1f,readerScroll.getScrollY()/(float)maxScroll):-1f;
-  readAhead.consider(true,true,progress,automatic,remaining,prefs.getInt("seconds",30),displayedCharacters(),prefs.getInt("readingRate",400));
- }
+ void resetReadProgress(){readingGeneration++;}
 
  @Override public void onCreate(Bundle state){super.onCreate(state);store=new Store(this);prefs=getSharedPreferences("settings",MODE_PRIVATE);if("original".equals(prefs.getString("view","translation")))prefs.edit().putString("view","translation").putBoolean("autoTranslate",false).apply();apiKeys=new ApiKeyStore(this);try{apiKey=apiKeys.load();}catch(Exception e){toast("已保存的 API Key 无法读取，请到「我的」重新配置");}colors();getWindow().setStatusBarColor(bg);getWindow().setNavigationBarColor(bg);if(Build.VERSION.SDK_INT>=30)getWindow().setDecorFitsSystemWindows(false);root=new LinearLayout(this);root.setOrientation(1);root.setBackgroundColor(bg);root.setOnApplyWindowInsetsListener((v,insets)->{if(Build.VERSION.SDK_INT>=30){android.graphics.Insets s=insets.getInsets(WindowInsets.Type.systemBars());root.setPadding(s.left,s.top,s.right,s.bottom);}return insets;});setContentView(root);try{if(!prefs.getBoolean("initialized",false)){store.saveNew(Book.demo());prefs.edit().putBoolean("initialized",true).apply();}}catch(Exception e){toast("示例无法保存，请检查存储空间");}showShelf();ui.postDelayed(timer,1000);if(state!=null){String id=state.getString("book");if(id!=null)openBook(id,state.getInt("position",0));}}
- @Override protected void onResume(){super.onResume();foreground=true;lastTick=SystemClock.elapsedRealtime();pump();}
- @Override protected void onPause(){foreground=false;lastTick=0;getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);super.onPause();}
+ @Override protected void onResume(){super.onResume();foreground=true;pump();}
+ @Override protected void onPause(){foreground=false;getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);super.onPause();}
  @Override protected void onSaveInstanceState(Bundle b){super.onSaveInstanceState(b);if(book!=null){b.putString("book",book.id);b.putInt("position",book.position);}}
  @Override protected void onDestroy(){foreground=false;translate=false;ui.removeCallbacks(timer);io.shutdown();network.shutdown();super.onDestroy();}
  @Override public void onConfigurationChanged(Configuration c){super.onConfigurationChanged(c);if(book!=null){paginate();showReader();}else showTab();}
@@ -56,7 +38,7 @@ public final class MainActivity extends Activity {
  LinearLayout pageContainer(){root.removeAllViews();colors();LinearLayout frame=column();frame.setPadding(dp(22),dp(18),dp(22),dp(12));root.addView(frame,new LinearLayout.LayoutParams(-1,0,1));return frame;}
  void nav(){LinearLayout n=row();n.setPadding(dp(12),dp(4),dp(12),dp(6));String[] names={"书架","阅读历史","我的"};for(int i=0;i<3;i++){final int k=i;TextView b=button(names[i],()->{tab=k;showTab();});b.setTextColor(tab==i?accent:muted);n.addView(b,new LinearLayout.LayoutParams(0,dp(52),1));}root.addView(n);}
  void showTab(){if(tab==0)showShelf();else if(tab==1)showHistory();else showSettings();}
- void showShelf(){book=null;translate=false;automatic=false;error="";getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);LinearLayout frame=pageContainer();LinearLayout header=row();TextView brand=label("页间   LEAF",22,accent);brand.setTypeface(null,Typeface.BOLD);header.addView(brand,new LinearLayout.LayoutParams(0,-2,1));header.addView(button("＋ 导入",()->chooseFile(100)));frame.addView(header);gap(frame,25);title(frame,"把故事，带在身边。","随读随译 · 快读完时，准备下一段");EditText search=new EditText(this);search.setSingleLine(true);search.setTextSize(14);search.setTextColor(text);search.setHintTextColor(muted);search.setHint("寻找书名或作者");frame.addView(search);gap(frame,10);ScrollView scroll=new ScrollView(this);LinearLayout list=column();scroll.addView(list);frame.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));Runnable populate=()->{list.removeAllViews();String q=search.getText().toString().toLowerCase(Locale.ROOT);for(Store.Entry e:store.list()){if(!(e.title+e.author).toLowerCase(Locale.ROOT).contains(q))continue;LinearLayout card=row();card.setPadding(dp(14),dp(18),dp(12),dp(18));card.setBackground(rounded(surface,13));TextView cover=label(e.format,12,bg);cover.setGravity(Gravity.CENTER);cover.setBackground(rounded(accent,7));card.addView(cover,new LinearLayout.LayoutParams(dp(52),dp(76)));LinearLayout words=column();words.setPadding(dp(16),0,dp(8),0);TextView name=label(e.title,17,text);name.setMaxLines(2);words.addView(name);gap(words,7);words.addView(label(e.author,11,muted));gap(words,5);words.addView(label(e.lastRead==0?"未开始":"已读 "+Math.round(e.position*100f/Math.max(1,e.total-1))+"%",11,accent));card.addView(words,new LinearLayout.LayoutParams(0,-2,1));card.addView(label("›",24,muted));card.setOnClickListener(v->openBook(e.id,-1));card.setOnLongClickListener(v->{manage(e);return true;});list.addView(card);gap(list,13);}if(list.getChildCount()==0)list.addView(label("还没有找到书籍，点击右上角导入。",14,muted));};populate.run();search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int c,int f){}public void onTextChanged(CharSequence s,int a,int before,int count){populate.run();}public void afterTextChanged(Editable e){}});nav();}
+ void showShelf(){book=null;translate=false;automatic=false;error="";getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);LinearLayout frame=pageContainer();LinearLayout header=row();TextView brand=label("页间   LEAF",22,accent);brand.setTypeface(null,Typeface.BOLD);header.addView(brand,new LinearLayout.LayoutParams(0,-2,1));header.addView(button("＋ 导入",()->chooseFile(100)));frame.addView(header);gap(frame,25);title(frame,"把故事，带在身边。","随读随译 · 提前准备后面两页");EditText search=new EditText(this);search.setSingleLine(true);search.setTextSize(14);search.setTextColor(text);search.setHintTextColor(muted);search.setHint("寻找书名或作者");frame.addView(search);gap(frame,10);ScrollView scroll=new ScrollView(this);LinearLayout list=column();scroll.addView(list);frame.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));Runnable populate=()->{list.removeAllViews();String q=search.getText().toString().toLowerCase(Locale.ROOT);for(Store.Entry e:store.list()){if(!(e.title+e.author).toLowerCase(Locale.ROOT).contains(q))continue;LinearLayout card=row();card.setPadding(dp(14),dp(18),dp(12),dp(18));card.setBackground(rounded(surface,13));TextView cover=label(e.format,12,bg);cover.setGravity(Gravity.CENTER);cover.setBackground(rounded(accent,7));card.addView(cover,new LinearLayout.LayoutParams(dp(52),dp(76)));LinearLayout words=column();words.setPadding(dp(16),0,dp(8),0);TextView name=label(e.title,17,text);name.setMaxLines(2);words.addView(name);gap(words,7);words.addView(label(e.author,11,muted));gap(words,5);words.addView(label(e.lastRead==0?"未开始":"已读 "+Math.round(e.position*100f/Math.max(1,e.total-1))+"%",11,accent));card.addView(words,new LinearLayout.LayoutParams(0,-2,1));card.addView(label("›",24,muted));card.setOnClickListener(v->openBook(e.id,-1));card.setOnLongClickListener(v->{manage(e);return true;});list.addView(card);gap(list,13);}if(list.getChildCount()==0)list.addView(label("还没有找到书籍，点击右上角导入。",14,muted));};populate.run();search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int c,int f){}public void onTextChanged(CharSequence s,int a,int before,int count){populate.run();}public void afterTextChanged(Editable e){}});nav();}
  void manage(Store.Entry e){dialog(new AlertDialog.Builder(this).setTitle(e.title).setItems(new String[]{"从头阅读","删除书籍及译文"},(d,n)->{if(n==0)openBook(e.id,0);else dialog(new AlertDialog.Builder(this).setTitle("删除这本书？").setMessage("本机书籍、译文和历史将被移除。").setNegativeButton("取消",null).setPositiveButton("删除",(dd,x)->{store.remove(e.id);showShelf();}).create());}).create());}
  void showHistory(){LinearLayout f=pageContainer();title(f,"阅读足迹","每次回来，都能接着读。 ");ScrollView s=new ScrollView(this);LinearLayout list=column();for(Store.Visit h:store.history()){LinearLayout c=column();c.setPadding(dp(16),dp(16),dp(16),dp(16));c.setBackground(rounded(surface,12));c.addView(label(new java.text.SimpleDateFormat("MM月dd日 HH:mm",Locale.CHINA).format(new Date(h.time)),11,muted));gap(c,8);c.addView(label(h.title,18,text));gap(c,7);c.addView(label("继续上次的阅读  ›",12,accent));c.setOnClickListener(v->openBook(h.bookId,h.position));list.addView(c);gap(list,13);}if(list.getChildCount()==0)list.addView(label("打开一本书，留下第一段阅读足迹。",14,muted));s.addView(list);f.addView(s,new LinearLayout.LayoutParams(-1,0,1));f.addView(button("清空历史",()->dialog(new AlertDialog.Builder(this).setTitle("清空阅读历史？").setMessage("书籍和阅读位置会保留。").setNegativeButton("取消",null).setPositiveButton("清空",(d,w)->{store.clearHistory();showHistory();}).create())));nav();}
  void showSettings(){
@@ -68,27 +50,25 @@ public final class MainActivity extends Activity {
   String keyState=apiKey.isEmpty()?"未配置 · 点击填写并保存 API Key":"Key 已加密保存 · "+prefs.getString("model","deepseek-flash");
   addSetting(items,"DeepSeek API 配置",keyState,()->translationSettings());
   addSetting(items,"随读随译",(prefs.getBoolean("free",false)?"免费 Google":"DeepSeek")+" · "+(prefs.getBoolean("autoTranslate",false)?"打开书籍自动翻译":"阅读时手动开启"),()->translationSettings());
-  addSetting(items,"预译时机","读到后段时预译下一页 · 调整阅读速度",()->readAheadSettings());
+  addSetting(items,"预译与一致性","提前两页 · 前文衔接与本书译名记忆",()->readAheadSettings());
   addSetting(items,"字体与阅读背景","字号、行距、留白、自动翻页",()->appearance());
-  addSetting(items,"导出书架备份","包含书籍、译文和历史；不包含 API Key",()->chooseExport());
+  addSetting(items,"导出书架备份","包含书籍、译文、译名和历史；不包含 API Key",()->chooseExport());
   addSetting(items,"恢复书架备份","导入本应用生成的 JSON 备份",()->chooseFile(102));
   addSetting(items,"使用说明","阅读不需要联网，翻译需要联网",()->about());
-  scroll.addView(items);f.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));gap(f,12);f.addView(label("页间 1.2.1 · 原生 Android",12,muted));nav();
+  scroll.addView(items);f.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));gap(f,12);f.addView(label("页间 1.3 · 原生 Android",12,muted));nav();
  }
  void readAheadSettings(){
-  LinearLayout f=column();f.setPadding(dp(22),dp(10),dp(22),dp(20));
-  f.addView(label("先译当前内容，快读完时再准备下一部分。",15,accent));gap(f,14);
-  f.addView(label("长页：滚动到后段（约 70%）时预译下一页。\n一屏能看完的页面：按停留时间和阅读速度估算。\n自动翻页：剩余约 30% 时间时开始预译。\n一次最多提前准备下一页，停在同一页不会继续往后译。",13,text));
-  final int[] rate={prefs.getInt("readingRate",400)};slider(f,"阅读速度",200,800,rate," 字/分钟");
-  gap(f,8);f.addView(label("预译偏晚可调快；偏早可调慢。菜单、设置和后台停留不计入阅读时间。",12,muted));
-  dialog(new AlertDialog.Builder(this).setTitle("预译时机").setView(f).setNegativeButton("取消",null).setPositiveButton("保存",(d,w)->{
-   prefs.edit().putInt("readingRate",rate[0]).apply();resetReadProgress();if(book==null)showSettings();else updateStatus();
-  }).create());
+  dialog(new AlertDialog.Builder(this).setTitle("预译与一致性").setMessage(
+   "当前页优先译好，然后立即预译后面两页。翻到下一页后，会继续补齐前方两页；停在同一页时不会一直往后翻译。免费通道也采用相同范围。\n\n"
+   +"DeepSeek 每次会参考最多两段前文及已有译文，并记住本书采用的人名、地名和组织名。你填写的术语表优先于自动记忆，适合固定重要角色的译名。自动记忆可能有误，不能保证完全一致。\n\n"
+   +"短前文和术语会增加少量输入用量，不发送整本书。免费通道不支持这些上下文和术语约束。\n\n"
+   +"菜单、设置、后台或关闭翻译时暂停新请求；已发出的请求可能完成并计费。已有译文直接复用，网络或服务较慢时仍可能需要等待。")
+   .setPositiveButton("知道了",null).create());
  }
 
  void addSetting(LinearLayout list,String name,String subtitle,Runnable click){LinearLayout card=column();card.setPadding(dp(16),dp(17),dp(16),dp(17));card.setBackground(rounded(surface,12));card.addView(label(name+"   ›",16,text));gap(card,7);card.addView(label(subtitle,11,muted));card.setOnClickListener(v->click.run());list.addView(card);gap(list,13);}
- void dialog(AlertDialog d){modal=true;d.setOnDismissListener(x->{modal=false;lastTick=SystemClock.elapsedRealtime();pump();});d.show();}
- void about(){dialog(new AlertDialog.Builder(this).setTitle("页间 · 原生阅读器").setMessage("导入 EPUB、TXT、DOCX 后，点击屏幕右侧或向左滑动翻到下一页；点击左侧或向右滑动返回。点击中央显示或隐藏菜单。Android 15 及以上支持文字型 PDF；扫描版请先 OCR。此版本为文字阅读版，不保留原图与复杂版式。\n\n长按书架上的书可删除或从头阅读。点「样式」调整字体、背景和自动翻页间隔。点击「关闭翻译」立即回到原文并停止新请求；点击「开启翻译」恢复缓存译文。长页面可上下滚动。\n\n开启翻译后，先准备当前页；长页滚动到约 70%，或一屏页面停留接近估计阅读时间的 70% 时，才准备紧接着的一页。自动模式按翻页倒计时触发。应用不能知道眼睛读到哪里，可在「我的 → 预译时机」调整阅读速度。已有译文按原文片段缓存，改字号不会重复请求已译片段。正在发送的请求可能已产生费用，会完成并保存；未发送的旧任务会在跳页后丢弃。\n\n免费通道可能限流。DeepSeek 由手机直接请求官方 API，使用你的 API 余额。在「我的 → DeepSeek API 配置」填写 Key，可在本机加密保存。重开应用会自动读取，不包含在书架备份中。\n\n所有书籍和译文保存在本机，卸载会删除。建议定期导出备份。备份与之前网页版本格式不同。\n\n无需网页或网站账号。APK 已做构建验证，尚未做实机和真实付费 Key 测试。").setPositiveButton("知道了",null).create());}
+ void dialog(AlertDialog d){modal=true;d.setOnDismissListener(x->{modal=false;pump();});d.show();}
+ void about(){dialog(new AlertDialog.Builder(this).setTitle("页间 · 原生阅读器").setMessage("导入 EPUB、TXT、DOCX 后，点击屏幕右侧或向左滑动翻到下一页；点击左侧或向右滑动返回。点击中央显示或隐藏菜单。Android 15 及以上支持文字型 PDF；扫描版请先 OCR。此版本为文字阅读版，不保留原图与复杂版式。\n\n长按书架上的书可删除或从头阅读。点「样式」调整字体、背景和自动翻页间隔。点击「关闭翻译」立即回到原文并停止新请求；点击「开启翻译」恢复缓存译文。长页面可上下滚动。\n\n开启翻译后，先准备当前页，随后立即预译后面两页，翻页后继续补齐；停在同一页不会继续往后译。DeepSeek 会携带短前文并保存本书译名，手动术语表优先。自动记忆可能有误，可在配置页的术语表指定译法。已有译文按原文片段缓存，改字号不会重复请求已译片段。正在发送的请求可能已产生费用，会完成并保存；未发送的旧任务会在跳页后丢弃。\n\n免费通道可能限流。DeepSeek 由手机直接请求官方 API，使用你的 API 余额。在「我的 → DeepSeek API 配置」填写 Key，可在本机加密保存。重开应用会自动读取，不包含在书架备份中。\n\n所有书籍、译文和译名记忆保存在本机，卸载会删除。建议定期导出备份。备份与之前网页版本格式不同。\n\n无需网页或网站账号。APK 已做构建验证，尚未做实机和真实付费 Key 测试。").setPositiveButton("知道了",null).create());}
  void chooseFile(int code){Intent intent=new Intent(Intent.ACTION_OPEN_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("*/*");// Some providers label EPUB as ZIP or use a vendor MIME; sniff the selected bytes instead.
  try{startActivityForResult(intent,code);}catch(Exception e){toast("未找到文件选择器");}}
  void chooseExport(){Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("application/json");intent.putExtra(Intent.EXTRA_TITLE,"页间备份-"+new java.text.SimpleDateFormat("yyyyMMdd",Locale.ROOT).format(new Date())+".json");startActivityForResult(intent,101);}
@@ -107,7 +87,7 @@ public final class MainActivity extends Activity {
   root.addView(readerFrame,new LinearLayout.LayoutParams(-1,0,1));
   readerScroll=new ScrollView(this);readerScroll.setFillViewport(false);
   readerScroll.setVerticalScrollBarEnabled(false);
-  readerScroll.setOnScrollChangeListener((v,x,y,oldX,oldY)->{if(!layingOut){considerReadAhead();pump();updateStatus();}});
+  readerScroll.setOnScrollChangeListener((v,x,y,oldX,oldY)->{if(!layingOut){pump();updateStatus();}});
   readerBody=column();int margin=prefs.getInt("margin",24);
   readerBody.setPadding(dp(margin),dp(22),dp(margin),dp(42));
   readerScroll.addView(readerBody);
@@ -163,7 +143,7 @@ public final class MainActivity extends Activity {
   body.getViewTreeObserver().addOnGlobalLayoutListener(new android.view.ViewTreeObserver.OnGlobalLayoutListener(){public void onGlobalLayout(){
    if(body.getViewTreeObserver().isAlive())body.getViewTreeObserver().removeOnGlobalLayoutListener(this);
    if(readerScroll!=target||generation!=readingGeneration||book==null)return;
-   target.scrollTo(0,y);layingOut=false;considerReadAhead();pump();
+   target.scrollTo(0,y);layingOut=false;pump();
   }});
  }
  TextView readerText(String s,boolean heading){TextView v=label(s,prefs.getInt("size",20)*(heading?1.22f:1),text);v.setTypeface(face(),heading?Typeface.BOLD:Typeface.NORMAL);v.setLineSpacing(0,prefs.getFloat("line",1.8f));v.setTextIsSelectable(true);return v;}
@@ -205,7 +185,7 @@ public final class MainActivity extends Activity {
 
  void chapters(){if(book==null)return;List<String> titles=new ArrayList<>();List<Integer> positions=new ArrayList<>();String previous="";for(int i=0;i<book.units.size();i++){String c=book.units.get(i).chapter;if(!c.equals(previous)){titles.add(c);positions.add(i);previous=c;}}dialog(new AlertDialog.Builder(this).setTitle("章节目录").setItems(titles.toArray(new String[0]),(d,n)->flip(Core.pageAt(pages,positions.get(n)))).setNegativeButton("关闭",null).create());}
  Translator.Config config(){Translator.Config c=new Translator.Config();c.free=prefs.getBoolean("free",false);c.key=apiKey;c.model=prefs.getString("model","deepseek-flash");c.source=prefs.getString("source","auto");c.target=prefs.getString("target","zh-CN");c.glossary=prefs.getString("glossary","");return c;}
- void reloadCache(){if(book==null)return;profile=config().profile();cached=store.cache(book.id,profile);}
+ void reloadCache(){if(book==null)return;profile=config().profile();cached=store.cache(book.id,profile);learnedTerms=store.terms(book.id,profile);}
  void toggleTranslation(){
   if(translate){translate=false;blocked=false;error="";prefs.edit().putBoolean("autoTranslate",false).apply();resetReadProgress();setMenuVisible(false);renderText(true);updateStatus();return;}
   if(!config().free&&apiKey.trim().isEmpty()){translationSettings();return;}
@@ -216,12 +196,15 @@ public final class MainActivity extends Activity {
   for(int i:ReadAhead.pageUnits(pages,index))if(!cached.containsKey(i))return false;return true;
  }
  boolean currentComplete(){return pageComplete(page());}
+ int aheadCount(){return Math.max(0,Math.min(ReadAhead.AHEAD_PAGES,pages.size()-page()-1));}
+ int aheadReady(){int ready=0;for(int n=1;n<=aheadCount();n++)if(pageComplete(page()+n))ready++;return ready;}
  String translationPhase(){
-  if(blocked)return "翻译暂停 · 点击中央重试";
   if(!translate)return "原文阅读";
-  if(!currentComplete())return "正在准备当前内容";
-  if(page()+1<pages.size()&&pageComplete(page()+1))return "下一部分已备好";
-  return readAhead.allowed()&&page()+1<pages.size()?"正在预译下一部分":"随读随译";
+  if(blocked)return "翻译暂停 · 点击中央重试";
+  if(!currentComplete())return "正在准备当前页";
+  int total=aheadCount(),ready=aheadReady();
+  if(total==0)return "本页已译好";
+  return ready==total?"后 "+total+" 页已备好":"预译后两页 · "+ready+"/"+total;
  }
  void updateStatus(){
   if(book==null||status==null||pages.isEmpty())return;
@@ -235,22 +218,24 @@ public final class MainActivity extends Activity {
   List<Integer> current=ReadAhead.pageUnits(pages,p);int count=0;for(int i:current)if(cached.containsKey(i))count++;
   if(count<current.size())status.setText("优先翻译当前内容  ·  "+count+"/"+current.size()+" 段");
   else if(p+1>=pages.size())status.setText("当前内容已译好 · 已到最后一页");
-  else if(pageComplete(p+1))status.setText("当前内容已译好 · 下一部分已备好");
-  else if(readAhead.allowed())status.setText("当前内容已译好 · 正在准备紧接着的一页");
-  else status.setText("当前内容已译好 · 接近读完时再预译下一页");
+  else status.setText("当前页已译好 · 后方已备好 "+aheadReady()+"/"+aheadCount()+" 页"+(menuVisible?" · 关闭菜单继续预译":""));
  }
  void pump(){
   if(book==null||!translate||!foreground||modal||menuVisible||selectingText||blocked||networkBusy)return;
   final Book taskBook=book;final Translator.Config conf=config();final String taskProfile=conf.profile();
   if(!taskProfile.equals(profile)){reloadCache();resetReadProgress();}
   final long generation=readingGeneration;
-  final List<Integer> ids=ReadAhead.nextBatch(pages,page(),cached.keySet(),readAhead.allowed(),3);
+  final List<Integer> ids=ReadAhead.nextBatch(pages,page(),cached.keySet(),!conf.free&&currentComplete()?6:3);
   if(ids.isEmpty()){updateStatus();return;}
   List<String> texts=new ArrayList<>();for(int id:ids)texts.add(book.units.get(id).text);
+  final Map<String,String> memory=new LinkedHashMap<>(learnedTerms);
+  final TranslationContext context;
+  try{context=conf.free?TranslationContext.empty():TranslationContext.create(taskBook,ids,cached,memory);}
+  catch(Exception e){blocked=true;error="无法准备翻译上下文，请重试";updateStatus();return;}
   networkBusy=true;updateStatus();
   network.execute(()->{
    String failure=null;
-   try{List<String> values=Translator.translate(conf,ids,texts);store.cache(taskBook.id,taskProfile,ids,values);}
+   try{Translator.Result result=Translator.translate(conf,ids,texts,context,memory);store.cache(taskBook.id,taskProfile,ids,result.translations,result.terms);}
    catch(Exception e){failure=errorMessage(e);if(!conf.key.isEmpty())failure=failure.replace(conf.key,"[已隐藏]");}
    final String problem=failure;
    ui.post(()->{
@@ -260,7 +245,7 @@ public final class MainActivity extends Activity {
      if(problem!=null){if(generation==readingGeneration){blocked=true;error=problem;}}
      else{
       reloadCache();Core.Page p=pages.get(page());boolean affects=false;for(int id:ids)if(id>=p.start&&id<p.end)affects=true;
-      if(affects&&translate){lastTick=SystemClock.elapsedRealtime();renderText(true);}
+      if(affects&&translate){renderText(true);}
      }
      updateStatus();
     }
@@ -276,7 +261,7 @@ public final class MainActivity extends Activity {
  EditText field(LinearLayout form,String name,String value,String hint,boolean secret){gap(form,12);form.addView(label(name,13,text));EditText e=new EditText(this);e.setTextSize(14);e.setTextColor(text);e.setHintTextColor(muted);e.setText(value);e.setHint(hint);e.setSingleLine(true);if(secret){e.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);e.setSaveEnabled(false);e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);}form.addView(e);return e;}
  void translationSettings(){
   LinearLayout f=column();f.setPadding(dp(22),dp(10),dp(22),dp(20));
-  f.addView(label("先译当前内容，快读完时再预译下一页。",13,accent));
+  f.addView(label("当前页优先译好，随后立即预译后面两页。",13,accent));
   Spinner provider=spinner(f,"翻译通道",new String[]{"DeepSeek API","免费 Google（可能限流）"},prefs.getBoolean("free",false)?1:0);
   EditText key=field(f,"DeepSeek API Key",apiKey,"粘贴 API Key，保存后下次自动读取",true);
   CheckBox reveal=new CheckBox(this);reveal.setText("显示 Key");reveal.setTextColor(muted);f.addView(reveal);
@@ -290,6 +275,14 @@ public final class MainActivity extends Activity {
   CheckBox autoStart=new CheckBox(this);autoStart.setText("打开书籍时自动开始随读随译");autoStart.setTextColor(text);autoStart.setChecked(prefs.getBoolean("autoTranslate",true));gap(f,14);f.addView(autoStart);
   EditText glossary=field(f,"术语表（仅 DeepSeek）",prefs.getString("glossary",""),"ThunderClan = 雷族",false);
   glossary.setSingleLine(false);glossary.setMinLines(2);glossary.setFilters(new InputFilter[]{new InputFilter.LengthFilter(8000)});
+  f.addView(label("每行一个固定译名，例如 ThunderClan = 雷族。手动术语优先于本书自动译名；修改术语表后会使用新的译文缓存。",12,muted));
+  if(book!=null&&!learnedTerms.isEmpty()){
+   gap(f,14);f.addView(label("本书已记住 "+learnedTerms.size()+" 个译名（最多展示 24 个）",13,accent));
+   StringBuilder preview=new StringBuilder();int shown=0;
+   for(Map.Entry<String,String> e:learnedTerms.entrySet()){if(shown++>=24)break;preview.append(e.getKey()).append(" = ").append(e.getValue()).append('\n');}
+   TextView names=label(preview.toString().trim(),12,muted);names.setTextIsSelectable(true);f.addView(names);
+  }
+  gap(f,10);f.addView(label("DeepSeek 会参考短前文与本书译名，减少称呼和风格变化；不能保证完全一致。免费通道不支持这些约束。",12,muted));
   gap(f,14);f.addView(label("Key 只在本机加密保存，不放进书架备份。手机直接向所选服务发送需要翻译的片段；DeepSeek 按调用计费。",12,muted));
   gap(f,12);f.addView(button("清除本机已保存的 Key",()->{
    try{apiKeys.clear();apiKey="";key.setText("");if(!prefs.getBoolean("free",false))translate=false;resetReadProgress();toast("已清除本机 API Key");if(book!=null){renderText(true);updateStatus();}}
@@ -297,7 +290,7 @@ public final class MainActivity extends Activity {
   }));
   ScrollView scroll=new ScrollView(this);scroll.addView(f);
   AlertDialog d=new AlertDialog.Builder(this).setTitle("翻译与 DeepSeek API 配置").setView(scroll).setNegativeButton("取消",null).setPositiveButton(book==null?"保存配置":"保存并翻译",null).create();
-  d.setOnDismissListener(x->{modal=false;lastTick=SystemClock.elapsedRealtime();if(book==null&&tab==2)showSettings();else pump();});
+  d.setOnDismissListener(x->{modal=false;if(book==null&&tab==2)showSettings();else pump();});
   modal=true;d.show();if(d.getWindow()!=null)d.getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
   d.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
    boolean free=provider.getSelectedItemPosition()==1;String nextKey=key.getText().toString().trim();String nextModel=model.getText().toString().trim();

@@ -1,0 +1,44 @@
+[
+  {
+    "version": "1.0.0",
+    "file": "LeafReader-Android-1.0.0.apk",
+    "bytes": 49614,
+    "sha256": "8cc3348bffc671e0bc6c69303eba61405c98a64ab84e37d1dc507868c3ae8c4c",
+    "certificate_sha256": "a2358aee8cf7eff50fdc4637dfb011aa2e30bde626b470a9b4f16223c37c5f32"
+  },
+  {
+    "version": "1.1.0",
+    "file": "LeafReader-Android-1.1.0.apk",
+    "bytes": 49614,
+    "sha256": "7d852d2d299f56454e2001e6fc93ca565d70f8997332b335a58c09cd46bddf6a",
+    "certificate_sha256": "a2358aee8cf7eff50fdc4637dfb011aa2e30bde626b470a9b4f16223c37c5f32"
+  },
+  {
+    "version": "1.2.0",
+    "file": "LeafReader-Android-1.2.0.apk",
+    "bytes": 57806,
+    "sha256": "6210f6a9809a5bb277a41a9909bd5b52003e50db1d013df60775d77550457d2b",
+    "certificate_sha256": "a2358aee8cf7eff50fdc4637dfb011aa2e30bde626b470a9b4f16223c37c5f32"
+  },
+  {
+    "version": "1.2.1",
+    "file": "LeafReader-Android-1.2.1.apk",
+    "bytes": 57806,
+    "sha256": "aebea3da62acc9f6c526a36e1ee2b2580cc07bc0367dca7c14619d6b673f2cfe",
+    "certificate_sha256": "a2358aee8cf7eff50fdc4637dfb011aa2e30bde626b470a9b4f16223c37c5f32"
+  },
+  {
+    "version": "1.3.0",
+    "file": "LeafReader-Android-1.3.0.apk",
+    "bytes": 61902,
+    "sha256": "379e53a63e88f6e122f0d210533064103fbe26522df421ce483b07709e631ab3",
+    "certificate_sha256": "a2358aee8cf7eff50fdc4637dfb011aa2e30bde626b470a9b4f16223c37c5f32"
+  },
+  {
+    "version": "1.3.1",
+    "file": "LeafReader-Android-1.3.1.apk",
+    "bytes": 61902,
+    "sha256": "681bd6515b56249b0221e09c03ffe998a0ef3e2ddb06c6597ace7eab48485e4e",
+    "certificate_sha256": "a2358aee8cf7eff50fdc4637dfb011aa2e30bde626b470a9b4f16223c37c5f32"
+  }
+]

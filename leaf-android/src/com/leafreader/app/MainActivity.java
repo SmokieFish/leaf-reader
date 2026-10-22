@@ -55,7 +55,7 @@ public final class MainActivity extends Activity {
   addSetting(items,"导出书架备份","包含书籍、译文、译名和历史；不包含 API Key",()->chooseExport());
   addSetting(items,"恢复书架备份","导入本应用生成的 JSON 备份",()->chooseFile(102));
   addSetting(items,"使用说明","阅读不需要联网，翻译需要联网",()->about());
-  scroll.addView(items);f.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));gap(f,12);f.addView(label("页间 1.3 · 原生 Android",12,muted));nav();
+  scroll.addView(items);f.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));gap(f,12);f.addView(label("页间 1.3.1 · 原生 Android",12,muted));nav();
  }
  void readAheadSettings(){
   dialog(new AlertDialog.Builder(this).setTitle("预译与一致性").setMessage(

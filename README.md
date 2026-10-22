@@ -1,13 +1,15 @@
 # 页间 · Leaf Reader
 
-原生 Android 电子书阅读器，支持边读边译。当前源码版本 **1.3.0**；最低 Android 8.0，文字型 PDF 导入需要 Android 15。
+原生 Android 电子书阅读器，支持边读边译。当前源码版本 **1.3.1**；最低 Android 8.0，文字型 PDF 导入需要 Android 15。
 
 - 书架、阅读历史、EPUB/TXT/DOCX 导入和文字型 PDF 提取。
 - 字体、背景、行距、翻页与自动翻页。
 - DeepSeek API / 免费翻译通道，译文缓存与原文切换。
+- 当前页优先翻译，立即预译后两页；DeepSeek 携带短前文并保存本书译名。
+- v1.3.1 增加备份恢复前校验、干净构建和发布文件检查。
 - 各版本能力以 [版本记录](CHANGELOG.md) 与 [使用说明](leaf-android/使用说明.md) 为准。
 
-[构建与签名](docs/BUILDING.md) · [数据与联网](docs/PRIVACY.md) · [第三方许可](THIRD_PARTY_NOTICES.md)
+[构建与签名](docs/BUILDING.md) · [数据与联网](docs/PRIVACY.md) · [第三方许可](THIRD_PARTY_NOTICES.md) · [安全与完整性检查](docs/RELEASE_AUDIT.md)
 
 ## 构建
 

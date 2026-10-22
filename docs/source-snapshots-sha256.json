@@ -1,0 +1,58 @@
+{
+  "1.0.0": {
+    "src/com/leafreader/app/Book.java": "c66ace063cd2f88f01ee530aaf7e30baef2525214b49913db3153969f7a36c25",
+    "src/com/leafreader/app/Core.java": "5592138ae8fea89d27efa3f12d6c1567ce086eea5554166e2f47d366e87f0c6b",
+    "src/com/leafreader/app/Importer.java": "1c73eaf756cfc84fbfd929e6e6c9d28f46262e448d0e210b09236a0673825952",
+    "src/com/leafreader/app/MainActivity.java": "61ed823658c7fa6f85a8f61dee193ec72e44b2b2761dac7477d83272c7023143",
+    "src/com/leafreader/app/Store.java": "8a926b44905bbdd1c63fc42b59435b62d0f40957e4c0146a6f30962ec1e935b3",
+    "src/com/leafreader/app/Translator.java": "54f8b89d0eda9ed54c22b0a8ad418d657873c98f180c4ba304539c5888198176"
+  },
+  "1.1.0": {
+    "src/com/leafreader/app/Book.java": "f5c7aa25323961d989a07f24efd854cce98f8fabe7dbc1558494d4ca1ab1ffb6",
+    "src/com/leafreader/app/Core.java": "5592138ae8fea89d27efa3f12d6c1567ce086eea5554166e2f47d366e87f0c6b",
+    "src/com/leafreader/app/Importer.java": "0b8d0263ab5cf2741d508695c83d9ada9e45145987f73b0b1955b4a8767ad7a7",
+    "src/com/leafreader/app/MainActivity.java": "b2a6ae74f89cae9c13bb69d1571ee4e00c51a6ba94e37d82ff7717a7781f16dc",
+    "src/com/leafreader/app/ReaderGesture.java": "1267a7deb624068a25a38693813722079f5719e70d5b5b756bd8045dba85c1a4",
+    "src/com/leafreader/app/Store.java": "8a926b44905bbdd1c63fc42b59435b62d0f40957e4c0146a6f30962ec1e935b3",
+    "src/com/leafreader/app/Translator.java": "54f8b89d0eda9ed54c22b0a8ad418d657873c98f180c4ba304539c5888198176"
+  },
+  "1.2.0": {
+    "src/com/leafreader/app/ApiKeyStore.java": "ec59abe0c5b4fb791ce8ae231fcac367c03593642428a361eddc985a1e1b6a69",
+    "src/com/leafreader/app/Book.java": "1813c1219c4b11d1c5b75aa1af846e841c4d6aa6b6a24f9bda8bc9f900451060",
+    "src/com/leafreader/app/Core.java": "8ed1ce125df5c259e0fdcf481d190d5bc2ae6800e5a2e73e1629b8cbf2f7828a",
+    "src/com/leafreader/app/Importer.java": "0b8d0263ab5cf2741d508695c83d9ada9e45145987f73b0b1955b4a8767ad7a7",
+    "src/com/leafreader/app/MainActivity.java": "88d8b37e525ba1ae516c73e548696da061598dd5399d09490ae93e3b90566c1a",
+    "src/com/leafreader/app/ReadAhead.java": "18a0cf9e08661450ca4d29a5ad555d1c7fb4668072a4fb1fe17f36f25c7fa042",
+    "src/com/leafreader/app/ReaderGesture.java": "1267a7deb624068a25a38693813722079f5719e70d5b5b756bd8045dba85c1a4",
+    "src/com/leafreader/app/SecretCodec.java": "76cfac69c7c899d474619bc3a2613a673087f63f39ef89d13aa3a9cf289fceef",
+    "src/com/leafreader/app/Store.java": "8a926b44905bbdd1c63fc42b59435b62d0f40957e4c0146a6f30962ec1e935b3",
+    "src/com/leafreader/app/Translator.java": "95c5e22d6b8e683c01aea728f8341240b8b8c9504e98fd0c1ad8ce93e2e53086"
+  },
+  "1.2.1": {
+    "src/com/leafreader/app/ApiKeyStore.java": "ec59abe0c5b4fb791ce8ae231fcac367c03593642428a361eddc985a1e1b6a69",
+    "src/com/leafreader/app/Book.java": "c60e31b397071892bad2b5932e6aa576ddc71fd67e7138710d9056f90c11f510",
+    "src/com/leafreader/app/Core.java": "8ed1ce125df5c259e0fdcf481d190d5bc2ae6800e5a2e73e1629b8cbf2f7828a",
+    "src/com/leafreader/app/Importer.java": "0b8d0263ab5cf2741d508695c83d9ada9e45145987f73b0b1955b4a8767ad7a7",
+    "src/com/leafreader/app/MainActivity.java": "289857979a8577774956f133d3c3ecb99ce1221a8164751f0021c64239d8b875",
+    "src/com/leafreader/app/ReadAhead.java": "18a0cf9e08661450ca4d29a5ad555d1c7fb4668072a4fb1fe17f36f25c7fa042",
+    "src/com/leafreader/app/ReaderDisplay.java": "dedc9549ff39441842b776b73e29d034fb2e99eeb4d42f810ad20f8c08269271",
+    "src/com/leafreader/app/ReaderGesture.java": "1267a7deb624068a25a38693813722079f5719e70d5b5b756bd8045dba85c1a4",
+    "src/com/leafreader/app/SecretCodec.java": "76cfac69c7c899d474619bc3a2613a673087f63f39ef89d13aa3a9cf289fceef",
+    "src/com/leafreader/app/Store.java": "8a926b44905bbdd1c63fc42b59435b62d0f40957e4c0146a6f30962ec1e935b3",
+    "src/com/leafreader/app/Translator.java": "95c5e22d6b8e683c01aea728f8341240b8b8c9504e98fd0c1ad8ce93e2e53086"
+  },
+  "1.3.0": {
+    "src/com/leafreader/app/ApiKeyStore.java": "ec59abe0c5b4fb791ce8ae231fcac367c03593642428a361eddc985a1e1b6a69",
+    "src/com/leafreader/app/Book.java": "eb03c22cd247696ea0f679101ea1feed5a4b7b226547ca75433815f65363e9f7",
+    "src/com/leafreader/app/Core.java": "8ed1ce125df5c259e0fdcf481d190d5bc2ae6800e5a2e73e1629b8cbf2f7828a",
+    "src/com/leafreader/app/Importer.java": "0b8d0263ab5cf2741d508695c83d9ada9e45145987f73b0b1955b4a8767ad7a7",
+    "src/com/leafreader/app/MainActivity.java": "855fe4e1a525d2b8b06da018bcdd9cb50d4a3bc6a447891542127ccb995e1442",
+    "src/com/leafreader/app/ReadAhead.java": "a558be253a163e982ba67ae319f1a70b9aba063dee1d2de063a043a54667c32a",
+    "src/com/leafreader/app/ReaderDisplay.java": "dedc9549ff39441842b776b73e29d034fb2e99eeb4d42f810ad20f8c08269271",
+    "src/com/leafreader/app/ReaderGesture.java": "1267a7deb624068a25a38693813722079f5719e70d5b5b756bd8045dba85c1a4",
+    "src/com/leafreader/app/SecretCodec.java": "76cfac69c7c899d474619bc3a2613a673087f63f39ef89d13aa3a9cf289fceef",
+    "src/com/leafreader/app/Store.java": "06375ca32ddc63b21226092f74e8d6b15e46352fc45c7fa4b0a0517e727efa49",
+    "src/com/leafreader/app/TranslationContext.java": "b6414fd4fb86bf8e12b1f505600d52381cd1c7dd05ce7190b6ddb35ec68272ce",
+    "src/com/leafreader/app/Translator.java": "fe39aa75451b714984db2e34aabb5801f3407ecbc0140edee5bd56fc9d6eb412"
+  }
+}

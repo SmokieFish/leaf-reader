@@ -1,0 +1,28 @@
+# Local builds and downloaded toolchains
+/leaf-android/build/
+/android-toolchain/*
+!/android-toolchain/setup.py
+!/android-toolchain/toolchain-lock.json
+/dist/
+*.apk
+*.idsig
+*.bundle
+__pycache__/
+# Credentials and private signing material must never enter any commit
+.env
+.env.*
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.key
+*.pem
+/leaf-android/signing/
+# User reading data
+/upload/
+*.epub
+*.db
+*.sqlite
+*.sqlite3
+*credentials*.json
+*backup*.json

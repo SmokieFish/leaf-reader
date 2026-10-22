@@ -1,6 +1,6 @@
 # 页间 · Leaf Reader
 
-原生 Android 电子书阅读器，支持边读边译。当前源码版本 **1.1.0**；最低 Android 8.0，文字型 PDF 导入需要 Android 15。
+原生 Android 电子书阅读器，支持边读边译。当前源码版本 **1.2.0**；最低 Android 8.0，文字型 PDF 导入需要 Android 15。
 
 - 书架、阅读历史、EPUB/TXT/DOCX 导入和文字型 PDF 提取。
 - 字体、背景、行距、翻页与自动翻页。
